@@ -457,9 +457,9 @@ async function startAuth() {
   if (!clientId) { alert('Introduce tu Client ID primero.'); return; }
   const verifier = generateCodeVerifier();
   const challenge = await generateCodeChallenge(verifier);
-  sessionStorage.setItem('pkce_verifier', verifier);
-  sessionStorage.setItem('client_id', clientId);
-  sessionStorage.setItem('playlist_name', document.getElementById('playlist-name').value.trim() || 'Mi Repertorio Musical');
+  localStorage.setItem('pkce_verifier', verifier);
+  localStorage.setItem('client_id', clientId);
+  localStorage.setItem('playlist_name', document.getElementById('playlist-name').value.trim() || 'Mi Repertorio Musical');
   const scope = 'playlist-modify-public playlist-modify-private';
   const url = `https://accounts.spotify.com/authorize?` + new URLSearchParams({
     client_id: clientId, response_type: 'code', redirect_uri: REDIRECT_URI,
@@ -477,9 +477,9 @@ async function handleCallback() {
 
   history.replaceState({}, '', window.location.pathname);
 
-  const clientId = sessionStorage.getItem('client_id');
-  const verifier = sessionStorage.getItem('pkce_verifier');
-  const playlistName = sessionStorage.getItem('playlist_name') || 'Mi Repertorio Musical';
+  const clientId = localStorage.getItem('client_id');
+  const verifier = localStorage.getItem('pkce_verifier');
+  const playlistName = localStorage.getItem('playlist_name') || 'Mi Repertorio Musical';
 
   if (error || !clientId || !verifier) {
     alert('Error de autenticación. Vuelve a intentarlo.');
