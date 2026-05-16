@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crear Playlist en Spotify</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1DB954;
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1c1c1c;
+    --border: #282828;
+    --text: #ffffff;
+    --muted: #a0a0a0;
+    --error: #f15050;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Figtree', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+  }
+  .logo {
+    margin-top: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+  }
+  .logo svg { width: 40px; height: 40px; }
+  .logo span { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+    margin-bottom: 1.5rem;
+  }
+  .card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.4rem; }
+  .card p.sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.5; }
+  label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.4rem; }
+  input[type="text"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.65rem 0.9rem;
+    color: var(--text);
+    font-family: 'Figtree', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 1rem;
+  }
+  input[type="text"]:focus { border-color: var(--green); }
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 50px;
+    font-family: 'Figtree', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-green { background: var(--green); color: #000; }
+  .btn-green:hover { background: #1ed760; transform: scale(1.02); }
+  .steps { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .step { flex: 1; height: 3px; border-radius: 2px; background: var(--border); transition: background 0.3s; }
+  .step.active { background: var(--green); }
+  .progress-bar-bg { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 0.5rem; }
+  .progress-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.3s; width: 0%; }
+  .progress-text { font-size: 0.78rem; color: var(--muted); }
+  .log {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    max-height: 220px;
+    overflow-y: auto;
+    font-size: 0.75rem;
+    font-family: monospace;
+    line-height: 1.6;
+    margin-top: 1rem;
+  }
+  .log-entry { color: var(--muted); }
+  .log-entry.ok { color: var(--green); }
+  .log-entry.err { color: var(--error); }
+  .log-entry.info { color: #7ab8e8; }
+  .success-icon { width: 64px; height: 64px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 1.8rem; }
+  .success-title { text-align: center; font-size: 1.3rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .success-sub { text-align: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .playlist-link {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    background: var(--green); color: #000; text-decoration: none;
+    font-weight: 700; font-size: 0.9rem; padding: 0.75rem 1.5rem;
+    border-radius: 50px; transition: background 0.2s;
+  }
+  .playlist-link:hover { background: #1ed760; }
+  .notice {
+    background: rgba(255,200,50,0.08);
+    border: 1px solid rgba(255,200,50,0.2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    color: #e8c97a;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+  .notice strong { display: block; margin-bottom: 0.2rem; }
+  code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.82rem;
+    color: var(--green);
+    word-break: break-all;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="logo">
+  <svg viewBox="0 0 24 24" fill="#1DB954"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+  <span>Spotify Playlist Creator</span>
+</div>
+
+<!-- STEP 1 -->
+<div class="card" id="step1">
+  <div class="steps">
+    <div class="step active"></div>
+    <div class="step"></div>
+    <div class="step"></div>
+  </div>
+  <h2>1. Configura tu app de Spotify</h2>
+  <p class="sub">Introduce tu Client ID y el nombre que quieres para la playlist.</p>
+
+  <div class="notice">
+    <strong>⚠️ Redirect URI que debes poner en Spotify</strong>
+    En tu app del Spotify Developer Dashboard → Edit Settings → Redirect URIs, añade exactamente:<br><br>
+    <code id="redirect-uri-display"></code>
+  </div>
+
+  <label>Client ID</label>
+  <input type="text" id="client-id" placeholder="Pega aquí tu Client ID">
+
+  <label>Nombre de la playlist</label>
+  <input type="text" id="playlist-name" value="Mi Repertorio Musical">
+
+  <button class="btn btn-green" onclick="startAuth()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+    Conectar con Spotify
+  </button>
+</div>
+
+<!-- STEP 2 -->
+<div class="card hidden" id="step2">
+  <div class="steps">
+    <div class="step active"></div>
+    <div class="step active"></div>
+    <div class="step"></div>
+  </div>
+  <h2>2. Creando tu playlist…</h2>
+  <p class="sub">Buscando cada canción en Spotify y añadiéndola. Puede tardar un par de minutos.</p>
+  <div>
+    <div class="progress-bar-bg"><div class="progress-bar" id="progress-bar"></div></div>
+    <div class="progress-text" id="progress-text">Iniciando…</div>
+  </div>
+  <div class="log" id="log"></div>
+</div>
+
+<!-- STEP 3 -->
+<div class="card hidden" id="step3">
+  <div class="steps">
+    <div class="step active"></div>
+    <div class="step active"></div>
+    <div class="step active"></div>
+  </div>
+  <div class="success-icon">🎵</div>
+  <div class="success-title">¡Playlist creada!</div>
+  <div class="success-sub" id="success-sub"></div>
+  <a href="#" id="playlist-link" class="playlist-link" target="_blank">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+    Abrir en Spotify
+  </a>
+</div>
+
+<script>
+const ALL_SONGS = [
+  ["Adagio en Sol menor","Albinoni"],["Adagio for Strings","Samuel Barber"],["Adeste Fideles","J.F. Wade"],
+  ["Air on the G String","Bach"],["Aleluya","Mozart"],["Alleluia Exsultate Jubilate","Mozart"],
+  ["Arabeske Opus 18","Robert Schumann"],["Arioso","Bach"],["Au Matin","Grieg"],
+  ["Ave Maria","Caccini"],["Ave Maria","Schubert"],["Ave Verum Corpus","Mozart"],
+  ["Benedicat vobis","Handel"],["Canon in D","Pachelbel"],["Cantata BWV 147","Bach"],
+  ["El Cisne","Saint-Saens"],["Le quattro stagioni Inverno","Vivaldi"],["Le quattro stagioni Autunno","Vivaldi"],
+  ["Hallelujah","Handel"],["Arrival of the Queen of Sheba","Handel"],["Largo Xerxes","Handel"],
+  ["Lascia ch io pianga","Handel"],["Laudate Dominum","Mozart"],["Wedding March","Mendelssohn"],
+  ["Meditation Thais","Massenet"],["Nocturne Op 9 No 2","Chopin"],["Waltz No 2","Shostakovich"],
+  ["Concierto de Aranjuez","Rodrigo"],["Flower Duet Lakme","Delibes"],["Prince of Denmark March","Jeremiah Clarke"],
+  ["All You Need Is Love","The Beatles"],["Always","Bon Jovi"],["Angels","Robbie Williams"],
+  ["At Last","Etta James"],["Bad Romance","Lady Gaga"],["Barefoot in the Park","James Blake Rosalia"],
+  ["Beautiful People","Ed Sheeran"],["Before You Go","Lewis Capaldi"],["Beso robado","Beret"],
+  ["Bitter Sweet Symphony","The Verve"],["Bohemian Rhapsody","Queen"],["Besame mucho","Consuelo Velazquez"],
+  ["Callaita","Bad Bunny"],["Can You Feel The Love Tonight","Elton John"],
+  ["Cant Help Falling in Love","Elvis Presley"],["Carolina","M Clan"],["Casta Diva","Bellini"],
+  ["Cerca de las vias","Fito y Fitipaldis"],["Chandelier","Sia"],["Cheap Thrills","Sia"],
+  ["Con te partiro","Andrea Bocelli"],["Copenhague","Vetusta Morla"],["Despacito","Luis Fonsi"],
+  ["Diamonds","Rihanna"],["Dust in the Wind","Kansas"],["El Sitio De Mi Recreo","Antonio Vega"],
+  ["Elastic Heart","Sia"],["Every Breath You Take","The Police"],["Experience","Ludovico Einaudi"],
+  ["Eye Of The Tiger","Survivor"],["Faded","Alan Walker"],["Fast Car","Tracy Chapman"],
+  ["Fix You","Coldplay"],["Flightless Bird American Mouth","Iron and Wine"],["Fly Me to the Moon","Frank Sinatra"],
+  ["Girls Like You","Maroon 5"],["Hallelujah","Leonard Cohen"],["Halo","Beyonce"],
+  ["Hasta Mi Final","Il Divo"],["Havana","Camila Cabello"],["Hello","Adele"],
+  ["Here Comes the Sun","The Beatles"],["I Dont Want to Miss a Thing","Aerosmith"],
+  ["I Just Called to Say I Love You","Stevie Wonder"],["I Say a Little Prayer","Aretha Franklin"],
+  ["I Wanna Dance With Somebody","Whitney Houston"],["I Want to Break Free","Queen"],
+  ["I Will Survive","Gloria Gaynor"],["Imagine","John Lennon"],["Issues","Julia Michaels"],
+  ["Its My Life","Bon Jovi"],["Its Raining Men","The Weather Girls"],
+  ["Just Give Me a Reason","Pink"],["Just Like Heaven","The Cure"],["Keep the Faith","Bon Jovi"],
+  ["Kiss the Rain","Yiruma"],["Kissing You","Des ree"],["La Bachata","Manuel Turizo"],
+  ["La Llorona","Chavela Vargas"],["La Luz Que Nace En Ti","La Oreja De Van Gogh"],
+  ["La Mujer De Verde","Izal"],["La Playa","La Oreja De Van Gogh"],["La Promesa","Melendi"],
+  ["La Puerta Violeta","Rozalen"],["La Quiero a Morir","Nina Pastori"],["La Salvacion","Arde Bogota"],
+  ["Lady Madrid","Pereza"],["Lagrimas Negras","Diego El Cigala"],["Lambada","Kaoma"],
+  ["Last Christmas","George Michael"],["Let It Be","The Beatles"],["Legends of the Fall","James Horner"],
+  ["Livin on a Prayer","Bon Jovi"],["Lo Saben Mis Zapatos","Pablo Lopez"],["Lo Siento","Beret"],
+  ["Long Live","Taylor Swift"],["Nella Fantasia","Il Divo"],["Nessun Dorma","Pavarotti"],
+  ["New York New York","Frank Sinatra"],["No Controles","Mecano"],["North","Sleeping At Last"],
+  ["Nothing Else Matters","Metallica"],["Nuvole Bianche","Ludovico Einaudi"],["Ocean","Karol G"],
+  ["Oceans","Hillsong United"],["Only Time","Enya"],["Under the Bridge","Red Hot Chili Peppers"],
+  ["Paradise","Coldplay"],["Peces De Ciudad","Joaquin Sabina"],["Pedacitos De Ti","Antonio Orozco"],
+  ["Perfect","Ed Sheeran"],["Photograph","Ed Sheeran"],["Malamente","Rosalia"],
+  ["Por La Boca Vive El Pez","Fito Y Fitipaldis"],["Por Primera Vez","Camilo"],["Praying","Kesha"],
+  ["Princesas","Pereza"],["Que Bonita La Vida","Dani Martin"],["Que Bonito Es Querer","Manuel Carrasco"],
+  ["Quedaté","Quevedo"],["Quisiera Ser","Alejandro Sanz"],["Quizas Quizas Quizas","Celia Cruz"],
+  ["Rayando El Sol","Mana"],["Relax Take It Easy","Mika"],["Resistire","Duo Dinamico"],
+  ["Right Here Waiting","Richard Marx"],["River Flows in You","Yiruma"],["Rockabye","Anne Marie"],
+  ["Rolling in the Deep","Adele"],["Rosas","La Oreja De Van Gogh"],["Sabor a Mi","Luis Miguel"],
+  ["Samskeyti","Sigur Ros"],["Say Something","A Great Big World"],["Say You Wont Let Go","James Arthur"],
+  ["See You Again","Charlie Puth"],["Sex Bomb","Tom Jones"],["Shallow","Lady Gaga"],
+  ["Shape of You","Ed Sheeran"],["She Loves You","The Beatles"],["She Will Be Loved","Maroon 5"],
+  ["Si Antes Te Hubiera Conocido","Karol G"],["Si Tu Me Dices Ven","Los Panchos"],
+  ["Si Tu Me Miras","Alejandro Sanz"],["Simply the Best","Tina Turner"],["Sirenas","Taburete"],
+  ["So Am I","Ava Max"],["Solamente Tu","Pablo Alboran"],["Solo Si Es Contigo","Bombai"],
+  ["Somebody to Love","Queen"],["Somebody You Loved","Lewis Capaldi"],["Someone Like You","Adele"],
+  ["Someone You Love","Lewis Capaldi"],["Somewhere Only We Know","Lily Allen"],
+  ["Song for Sienna","Brian Crain"],["Song from a Secret Garden","Secret Garden"],
+  ["The Sound of Silence","Simon and Garfunkel"],["Stand by Me","Ben E King"],["Stay With Me","Sam Smith"],
+  ["Story of My Life","One Direction"],["Sugar","Maroon 5"],["Summer","Calvin Harris"],
+  ["Summertime","Ella Fitzgerald"],["Sweet Caroline","Neil Diamond"],["Sweet Child O Mine","Guns N Roses"],
+  ["Tacones Rojos","Sebastian Yatra"],["Te Quiero","Perales"],["Thank You for Loving Me","Bon Jovi"],
+  ["The Anchor","Bastille"],["The House of the Rising Sun","The Animals"],
+  ["The Scientist","Coldplay"],["The Unforgiven","Metallica"],["Thinking Out Loud","Ed Sheeran"],
+  ["Titanium","Sia"],["To Build a Home","Cinematic Orchestra"],["To Make You Feel My Love","Adele"],
+  ["Todo De Ti","Rauw Alejandro"],["Total Eclipse of the Heart","Bonnie Tyler"],["Trouble","Coldplay"],
+  ["Tu Jardin Con Enanitos","Melendi"],["Tu La Quieres","David Bisbal"],["Turning Page","Sleeping at Last"],
+  ["Un Canto a la Vida","Vanesa Martin"],["Una Mattina","Ludovico Einaudi"],
+  ["Verde Que Te Quiero Verde","Lola Indigo"],["Vida De Rico","Camilo"],["Viva la Vida","Coldplay"],
+  ["Vivir Asi Es Morir De Amor","Camilo Sesto"],["Wake Me Up","Avicii"],
+  ["Walking on Sunshine","Katrina and the Waves"],["Watermelon Sugar","Harry Styles"],
+  ["We Found Love","Rihanna"],["What a Wonderful World","Louis Armstrong"],["What About Us","Pink"],
+  ["What Makes You Beautiful","One Direction"],["When Love Takes Over","David Guetta"],
+  ["When We Were Young","Adele"],["Wherever You Will Go","The Calling"],
+  ["Wildest Dreams","Taylor Swift"],["Yellow","Coldplay"],["Yesterday","The Beatles"],
+  ["YMCA","Village People"],["You Are the Reason","Calum Scott"],["You Belong With Me","Taylor Swift"],
+  ["You Raise Me Up","Josh Groban"],["Your Song","Elton John"],
+  ["A Million Dreams","The Greatest Showman"],["Across the Stars","John Williams"],
+  ["Alegria","Cirque du Soleil"],["Always Remember Us This Way","Lady Gaga"],
+  ["Autumn Leaves","Joseph Kosma"],["Bella Ciao","Tradicional"],
+  ["Blue Bossa","Kenny Dorham"],["Gabriel's Oboe","Ennio Morricone"],
+  ["Glasgow Love Theme","Craig Armstrong"],["Hedwig's Theme","John Williams"],
+  ["Honor Him","Hans Zimmer"],["Hymn to the Sea","James Horner"],
+  ["I Will Always Love You","Whitney Houston"],["Ill Be There for You","The Rembrandts"],
+  ["Interstellar Main Theme","Hans Zimmer"],["Jurassic Park Theme","John Williams"],
+  ["Kissing You","Des ree"],["La Valse d Amelie","Yann Tiersen"],["La Vie en Rose","Edith Piaf"],
+  ["Let It Go","Idina Menzel"],["Love Theme Cinema Paradiso","Ennio Morricone"],
+  ["Imperial March","John Williams"],["Moon River","Henry Mancini"],
+  ["My Heart Will Go On","Celine Dion"],["Never Enough","Loren Allred"],
+  ["Now We Are Free","Hans Zimmer"],["Nuvole Bianche","Ludovico Einaudi"],
+  ["Over the Rainbow","Israel Kamakawiwoole"],["Remember Me","Coco"],
+  ["Rewrite the Stars","The Greatest Showman"],["River Flows in You","Yiruma"],
+  ["Schindlers List","John Williams"],["She","Elvis Costello"],
+  ["Song from a Secret Garden","Rolf Lovland"],["The Ecstasy of Gold","Ennio Morricone"],
+  ["The Imperial March","John Williams"],["The Godfather Waltz","Nino Rota"],
+  ["The Shire","Howard Shore"],["The Time of My Life","Bill Medley"],
+  ["This Is Me","Keala Settle"],["Unchained Melody","Righteous Brothers"],
+  ["Under the Sea","The Little Mermaid"],["Vois sur ton chemin","Bruno Coulais"],
+  ["When You Believe","Whitney Houston"],["Youll Be in My Heart","Phil Collins"],
+  ["Concerning Hobbits","Howard Shore"],["Duel of the Fates","John Williams"],
+  ["Ezio's Family","Jesper Kyd"],["Comptine d un autre ete","Yann Tiersen"],
+  ["Way Maker","Sinach"],["Oceans Where Feet May Fail","Hillsong United"],
+  ["Pie Jesu","Andrew Lloyd Webber"],["Abres Caminos","Priscilla Quispe"],
+];
+
+const REDIRECT_URI = window.location.href.split('?')[0].split('#')[0];
+document.getElementById('redirect-uri-display').textContent = REDIRECT_URI;
+
+function startAuth() {
+  const clientId = document.getElementById('client-id').value.trim();
+  if (!clientId) { alert('Introduce tu Client ID primero.'); return; }
+  localStorage.setItem('client_id', clientId);
+  localStorage.setItem('playlist_name', document.getElementById('playlist-name').value.trim() || 'Mi Repertorio Musical');
+  const scope = 'playlist-modify-public playlist-modify-private';
+  const url = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({
+    client_id: clientId,
+    response_type: 'token',
+    redirect_uri: REDIRECT_URI,
+    scope: scope,
+  });
+  window.location = url;
+}
+
+async function handleCallback() {
+  const hash = window.location.hash.substring(1);
+  const params = new URLSearchParams(hash);
+  const token = params.get('access_token');
+  const error = params.get('error');
+  if (!token && !error) return;
+
+  history.replaceState({}, '', window.location.pathname);
+
+  if (error) { alert('Error de autenticación: ' + error); return; }
+
+  const clientId = localStorage.getItem('client_id');
+  const playlistName = localStorage.getItem('playlist_name') || 'Mi Repertorio Musical';
+
+  document.getElementById('step1').classList.add('hidden');
+  document.getElementById('step2').classList.remove('hidden');
+  addLog('Autenticado correctamente', 'ok');
+
+  // Get user
+  const me = await apiFetch(token, 'https://api.spotify.com/v1/me');
+  if (!me.id) { addLog('Error obteniendo usuario', 'err'); return; }
+  addLog('Usuario: ' + (me.display_name || me.id), 'ok');
+
+  // Create playlist
+  const pl = await apiFetch(token, 'https://api.spotify.com/v1/users/' + me.id + '/playlists', {
+    method: 'POST',
+    body: JSON.stringify({ name: playlistName, description: 'Creada automaticamente', public: false }),
+  });
+  if (!pl.id) { addLog('Error creando playlist', 'err'); return; }
+  addLog('Playlist creada: ' + playlistName, 'ok');
+
+  const uris = [];
+  let found = 0, notFound = 0;
+  const total = ALL_SONGS.length;
+
+  for (let i = 0; i < total; i++) {
+    const [title, artist] = ALL_SONGS[i];
+    updateProgress(i, total, 'Buscando: ' + title);
+    try {
+      const q = encodeURIComponent('track:' + title + ' artist:' + artist);
+      const res = await apiFetch(token, 'https://api.spotify.com/v1/search?q=' + q + '&type=track&limit=1');
+      if (res.tracks && res.tracks.items.length > 0) {
+        uris.push(res.tracks.items[0].uri);
+        found++;
+      } else {
+        // fallback: title only
+        const q2 = encodeURIComponent(title);
+        const res2 = await apiFetch(token, 'https://api.spotify.com/v1/search?q=' + q2 + '&type=track&limit=1');
+        if (res2.tracks && res2.tracks.items.length > 0) {
+          uris.push(res2.tracks.items[0].uri);
+          found++;
+        } else {
+          notFound++;
+          addLog('No encontrada: ' + title, 'err');
+        }
+      }
+      if (uris.length === 100) {
+        await apiFetch(token, 'https://api.spotify.com/v1/playlists/' + pl.id + '/tracks', {
+          method: 'POST', body: JSON.stringify({ uris: uris.splice(0) }),
+        });
+        addLog('Bloque de 100 canciones añadido', 'ok');
+      }
+    } catch(e) { notFound++; }
+    await sleep(100);
+  }
+
+  if (uris.length > 0) {
+    await apiFetch(token, 'https://api.spotify.com/v1/playlists/' + pl.id + '/tracks', {
+      method: 'POST', body: JSON.stringify({ uris }),
+    });
+    addLog('Ultimas ' + uris.length + ' canciones añadidas', 'ok');
+  }
+
+  updateProgress(total, total, 'Completado');
+  addLog(found + ' canciones añadidas / ' + notFound + ' no encontradas', 'ok');
+
+  document.getElementById('step2').classList.add('hidden');
+  document.getElementById('step3').classList.remove('hidden');
+  document.getElementById('success-sub').textContent = found + ' canciones añadidas a "' + playlistName + '"';
+  document.getElementById('playlist-link').href = pl.external_urls.spotify;
+}
+
+async function apiFetch(token, url, opts) {
+  opts = opts || {};
+  const res = await fetch(url, {
+    method: opts.method || 'GET',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: opts.body || undefined,
+  });
+  return res.json();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function addLog(msg, type) {
+  const log = document.getElementById('log');
+  const el = document.createElement('div');
+  el.className = 'log-entry ' + (type || '');
+  el.textContent = msg;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+function updateProgress(done, total, msg) {
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = msg + ' (' + done + '/' + total + ')';
+}
+
+handleCallback();
+</script>
+</body>
+</html>
