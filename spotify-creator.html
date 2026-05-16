@@ -296,7 +296,7 @@ async function handleCallback() {
   if (!pl.id) { addLog('Error creando playlist: ' + JSON.stringify(pl), 'err'); return; }
   addLog('Playlist "' + playlist + '" creada', 'ok');
 
-  // Buscar y añadir canciones
+  // Buscar canciones
   const uris = [];
   let found = 0, notFound = 0;
   const total = ALL_SONGS.length;
@@ -305,19 +305,25 @@ async function handleCallback() {
     const [title, artist] = ALL_SONGS[i];
     updateProgress(i, total, 'Buscando: ' + title);
     try {
-      let uri = await searchTrack(token, title, artist);
+      const uri = await searchTrack(token, title, artist);
       if (uri) { uris.push(uri); found++; }
       else { notFound++; addLog('No encontrada: ' + title, 'err'); }
-      if (uris.length === 100) {
-        await addTracks(token, pl.id, uris.splice(0));
-        addLog('Bloque de 100 canciones añadido', 'ok');
-      }
-    } catch(e) { notFound++; }
+    } catch(e) { notFound++; addLog('Error buscando ' + title + ': ' + e.message, 'err'); }
     await sleep(120);
   }
-  if (uris.length > 0) {
-    await addTracks(token, pl.id, uris);
-    addLog('Últimas ' + uris.length + ' canciones añadidas', 'ok');
+
+  addLog('Busqueda completada: ' + found + ' encontradas. Añadiendo a playlist...', 'info');
+
+  // Añadir en bloques de 100
+  for (let i = 0; i < uris.length; i += 100) {
+    const block = uris.slice(i, i + 100);
+    const res = await addTracks(token, pl.id, block);
+    if (res && res.snapshot_id) {
+      addLog('Bloque añadido: canciones ' + (i+1) + '-' + (i+block.length), 'ok');
+    } else {
+      addLog('Error añadiendo bloque: ' + JSON.stringify(res), 'err');
+    }
+    await sleep(300);
   }
 
   updateProgress(total, total, 'Completado');
@@ -341,6 +347,7 @@ async function searchTrack(token, title, artist) {
 }
 
 async function addTracks(token, playlistId, uris) {
+  // Returns snapshot_id on success
   await apiFetch(token, 'https://api.spotify.com/v1/playlists/' + playlistId + '/tracks', {
     method: 'POST', body: JSON.stringify({ uris }),
   });
