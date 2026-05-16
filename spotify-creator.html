@@ -289,7 +289,7 @@ async function handleCallback() {
   addLog('Usuario: ' + (me.display_name || me.id), 'ok');
 
   // Crear playlist
-  const pl = await apiFetch(token, 'https://api.spotify.com/v1/users/' + me.id + '/playlists', {
+  const pl = await apiFetch(token, 'https://api.spotify.com/v1/me/playlists', {
     method: 'POST',
     body: JSON.stringify({ name: playlist, description: 'Creada automáticamente', public: false }),
   });
